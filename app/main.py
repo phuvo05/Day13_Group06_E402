@@ -12,7 +12,7 @@ from .metrics import record_error, snapshot
 from .middleware import CorrelationIdMiddleware
 from .pii import hash_user_id, summarize_text
 from .schemas import ChatRequest, ChatResponse
-from .tracing import trace_request, tracing_enabled
+from .tracing import trace_request, tracing_enabled, langfuse_context
 
 configure_logging()
 log = get_logger()
@@ -32,9 +32,25 @@ async def startup() -> None:
     )
 
 
-@app.get("/")
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    if tracing_enabled() and langfuse_context:
+        import asyncio
+        await asyncio.get_event_loop().run_in_executor(None, langfuse_context.flush)
+        langfuse_context.shutdown()
+
+
+@app.get("/", include_in_schema=False)
 async def root() -> RedirectResponse:
     return RedirectResponse(url="/docs")
+
+
+@app.post("/flush", include_in_schema=False)
+async def flush_traces() -> dict:
+    if tracing_enabled() and langfuse_context:
+        import asyncio
+        await asyncio.get_event_loop().run_in_executor(None, langfuse_context.flush)
+    return {"ok": True}
 
 
 @app.get("/health")
