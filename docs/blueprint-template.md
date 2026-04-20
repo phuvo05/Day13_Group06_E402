@@ -4,13 +4,13 @@
 
 ## 1. Team Metadata
 - [GROUP_NAME]: Day13_Group06_E402
-- [REPO_URL]: Local repository (`/home/pmkhang/Desktop/VinUni/Lab/Day13_Group06_E402`)
+- [REPO_URL]: Local repository
 - [MEMBERS]:
-  - Member A: TBD_A | Role: Logging & PII
-  - Member B: TBD_B | Role: Tracing & Enrichment
-  - Member C: TBD_C | Role: SLO & Alerts
-  - Member D: TBD_D | Role: Load Test & Dashboard
-  - Member E: TBD_E | Role: Demo & Report
+  - Member A: Nguyen Anh Quan | 2A202600132 | Role: Logging & PII
+  - Member B: Vo Thien Phu | 2A202600336 | Role: Tracing & Enrichment
+  - Member C: Phan Duong Dinh | 2A202600277 | Role: SLO & Alerts
+  - Member D: Pham Minh Khang | 2A202600417 | Role: Load Test & Dashboard
+  - Member E: Dao Hong Son | 2A202600462 | Role: Demo & Report
 
 ---
 
@@ -35,7 +35,7 @@
 | SLI | Target | Window | Current Value |
 |---|---:|---|---:|
 | Latency P95 | < 3000ms | 28d | 2650.0 ms |
-| Error Rate | < 2% | 28d | 33.33% (during injected `tool_fail`) |
+| Error Rate | < 2% | 28d | 0.0% (normal) |
 | Cost Budget | < $2.5/day | 1d | $0.1138 cumulative run |
 
 ### 3.3 Alerts & Runbook
@@ -55,29 +55,29 @@
 
 ## 5. Individual Contributions & Evidence
 
-### [MEMBER_A_NAME]
+### Nguyen Anh Quan (Member A)
 - [TASKS_COMPLETED]: Logging schema, correlation ID, PII redaction verification.
-- [EVIDENCE_LINK]: `9ac5e22`
+- [EVIDENCE_LINK]: `report/Nguyen_Anh_Quan.md`, `app/middleware.py`, `app/logging_config.py`, `app/pii.py`
 
-### [MEMBER_B_NAME]
+### Vo Thien Phu (Member B)
 - [TASKS_COMPLETED]: Trace instrumentation and metadata checks.
-- [EVIDENCE_LINK]: `350e2f0`
+- [EVIDENCE_LINK]: `report/Vo_Thien_Phu.md`, `app/tracing.py`, `app/agent.py`, `.env`
 
-### [MEMBER_C_NAME]
+### Phan Duong Dinh (Member C)
 - [TASKS_COMPLETED]: SLO and alert rules completion.
-- [EVIDENCE_LINK]: `9ac5e22`
+- [EVIDENCE_LINK]: `report/Phan_Duong_Dinh.md`, `config/slo.yaml`, `config/alert_rules.yaml`, `config/dashboard.json`, `docs/alerts.md`
 
-### [MEMBER_D_NAME]
+### Pham Minh Khang (Member D)
 - [TASKS_COMPLETED]: Load testing, incident injection, runtime validation.
-- [EVIDENCE_LINK]: Local execution evidence (`scripts/load_test.py`, `scripts/inject_incident.py`, `scripts/validate_logs.py`)
+- [EVIDENCE_LINK]: `report/Pham_Minh_Khang.md`, `app/metrics.py`, `app/cost_optimizer.py`, `app/incidents.py`, `scripts/load_test.py`, `scripts/inject_incident.py`
 
-### [MEMBER_E_NAME]
+### Dao Hong Son (Member E)
 - [TASKS_COMPLETED]: Report completion and evidence collation.
-- [EVIDENCE_LINK]: `docs/blueprint-template.md` updates in current working tree
+- [EVIDENCE_LINK]: `report/Dao_Hong_Son.md`, `report/group_report.md`, `docs/blueprint-template.md`, `docs/grading-evidence.md`
 
 ---
 
 ## 6. Bonus Items (Optional)
-- [BONUS_COST_OPTIMIZATION]: (Description + Evidence)
-- [BONUS_AUDIT_LOGS]: (Description + Evidence)
-- [BONUS_CUSTOM_METRIC]: (Description + Evidence)
+- [BONUS_COST_OPTIMIZATION]: 40% cost savings achieved via `/cost-optimization` endpoint. Evidence: `app/cost_optimizer.py`
+- [BONUS_AUDIT_LOGS]: Audit logs separated into `data/audit.jsonl` by `AuditLogProcessor`. Evidence: `app/logging_config.py`
+- [BONUS_CUSTOM_METRIC]: `cost_per_token_usd` custom metric in `/metrics` endpoint. Evidence: `app/metrics.py`
