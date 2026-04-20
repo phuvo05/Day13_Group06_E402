@@ -1,0 +1,77 @@
+{
+  "title": "Day 13 Observability Dashboard",
+  "timeRange": "1h",
+  "refresh": "15s",
+  "layout": "6-panel",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Latency P50/P95/P99",
+      "type": "timeseries",
+      "unit": "ms",
+      "thresholds": [
+        { "label": "SLO P95 < 3000ms", "value": 3000 }
+      ],
+      "queries": ["latency_p50_ms", "latency_p95_ms", "latency_p99_ms"]
+    },
+    {
+      "id": 2,
+      "title": "Traffic / QPS",
+      "type": "timeseries",
+      "unit": "req/min",
+      "thresholds": [
+        { "label": "Target throughput", "value": 60 }
+      ],
+      "queries": ["traffic", "qps"]
+    },
+    {
+      "id": 3,
+      "title": "Error Rate & Breakdown",
+      "type": "bar+timeseries",
+      "unit": "%",
+      "thresholds": [
+        { "label": "SLO < 2%", "value": 2 }
+      ],
+      "queries": ["error_rate", "error_breakdown"]
+    },
+    {
+      "id": 4,
+      "title": "Cost Over Time",
+      "type": "timeseries",
+      "unit": "$",
+      "thresholds": [
+        { "label": "Budget < $2.5/day", "value": 2.5 }
+      ],
+      "queries": ["avg_cost_usd", "total_cost_usd"]
+    },
+    {
+      "id": 5,
+      "title": "Tokens In/Out",
+      "type": "timeseries",
+      "unit": "tokens",
+      "thresholds": [],
+      "queries": ["tokens_in_total", "tokens_out_total"]
+    },
+    {
+      "id": 6,
+      "title": "Quality Proxy",
+      "type": "timeseries",
+      "unit": "score",
+      "thresholds": [
+        { "label": "Target >= 0.8", "value": 0.8 }
+      ],
+      "queries": ["quality_avg"]
+    },
+    {
+      "id": 7,
+      "title": "Cost Per Token (Custom Metric)",
+      "type": "stat",
+      "unit": "$/token",
+      "thresholds": [
+        { "label": "Budget < $0.000005/token", "value": 0.000005 }
+      ],
+      "queries": ["cost_per_token_usd"],
+      "note": "Custom metric: tracks cost efficiency per token processed"
+    }
+  ]
+}

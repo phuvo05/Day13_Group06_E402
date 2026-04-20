@@ -5,15 +5,25 @@ alerts:
     type: symptom-based
     owner: team-oncall
     runbook: docs/alerts.md#1-high-latency-p95
+    summary: Tail latency is breaching the interactive SLO.
   - name: high_error_rate
     severity: P1
     condition: error_rate_pct > 5 for 5m
     type: symptom-based
     owner: team-oncall
     runbook: docs/alerts.md#2-high-error-rate
+    summary: A large share of user requests are failing.
   - name: cost_budget_spike
     severity: P2
     condition: hourly_cost_usd > 2x_baseline for 15m
     type: symptom-based
     owner: finops-owner
     runbook: docs/alerts.md#3-cost-budget-spike
+    summary: Spend is increasing faster than expected.
+  - name: quality_drop
+    severity: P3
+    condition: quality_score_avg < 0.65 for 30m
+    type: symptom-based
+    owner: product-oncall
+    runbook: docs/alerts.md#1-high-latency-p95
+    summary: Answer quality proxy is trending down.

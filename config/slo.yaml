@@ -4,13 +4,20 @@ slis:
   latency_p95_ms:
     objective: 3000
     target: 99.5
-    note: Replace with your group's target
+    unit: ms
+    note: Tail latency should stay within the interactive experience budget.
   error_rate_pct:
     objective: 2
     target: 99.0
+    unit: percent
+    note: Failed responses should remain rare across all features.
   daily_cost_usd:
     objective: 2.5
     target: 100.0
+    unit: usd
+    note: Keep the daily cost within the assignment budget.
   quality_score_avg:
     objective: 0.75
     target: 95.0
+    unit: score
+    note: Maintain a useful answer quality proxy for debugging.

@@ -1,19 +1,18 @@
-from __future__ import annotations
-
 import os
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from structlog.contextvars import bind_contextvars
 
 from .agent import LabAgent
+from .cost_optimizer import analyze_cost_optimization
 from .incidents import disable, enable, status
 from .logging_config import configure_logging, get_logger
 from .metrics import record_error, snapshot
 from .middleware import CorrelationIdMiddleware
 from .pii import hash_user_id, summarize_text
 from .schemas import ChatRequest, ChatResponse
-from .tracing import tracing_enabled
+from .tracing import trace_request, tracing_enabled
 
 configure_logging()
 log = get_logger()
@@ -28,8 +27,14 @@ async def startup() -> None:
         "app_started",
         service=os.getenv("APP_NAME", "day13-observability-lab"),
         env=os.getenv("APP_ENV", "dev"),
+        feature="startup",
         payload={"tracing_enabled": tracing_enabled()},
     )
+
+
+@app.get("/")
+async def root() -> RedirectResponse:
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")
@@ -42,14 +47,26 @@ async def metrics() -> dict:
     return snapshot()
 
 
+@app.get("/cost-optimization")
+async def cost_optimization() -> dict:
+    from dataclasses import asdict
+    return asdict(analyze_cost_optimization())
+
+
 @app.post("/chat", response_model=ChatResponse)
+@trace_request(name="chat_request")
 async def chat(request: Request, body: ChatRequest) -> ChatResponse:
-    # TODO: Enrich logs with request context (user_id_hash, session_id, feature, model, env)
-    # bind_contextvars(...)
-    
+    bind_contextvars(
+        user_id_hash=hash_user_id(body.user_id),
+        session_id=body.session_id,
+        feature=body.feature,
+        env=os.getenv("APP_ENV", "dev"),
+        service="api",
+    )
+
     log.info(
         "request_received",
-        service="api",
+        trace_name="chat_request",
         payload={"message_preview": summarize_text(body.message)},
     )
     try:
@@ -61,11 +78,12 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
         )
         log.info(
             "response_sent",
-            service="api",
+            trace_name="chat_request",
             latency_ms=result.latency_ms,
             tokens_in=result.tokens_in,
             tokens_out=result.tokens_out,
             cost_usd=result.cost_usd,
+            quality_score=result.quality_score,
             payload={"answer_preview": summarize_text(result.answer)},
         )
         return ChatResponse(
@@ -82,7 +100,6 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
         record_error(error_type)
         log.error(
             "request_failed",
-            service="api",
             error_type=error_type,
             payload={"detail": str(exc), "message_preview": summarize_text(body.message)},
         )
