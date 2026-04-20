@@ -1,19 +1,40 @@
 alerts:
   - name: high_latency_p95
     severity: P2
-    condition: latency_p95_ms > 5000 for 30m
+    condition: app_latency_p95_seconds > 5 for 30m
+    metric: app_latency_p95_seconds
+    threshold: 5
+    window: 30m
     type: symptom-based
     owner: team-oncall
     runbook: docs/alerts.md#1-high-latency-p95
+    description: P95 latency for /chat endpoint exceeds 5 seconds
+    impact: Users experience slow responses; SLO breached
+    dashboard_panel: "2. P95 Latency"
+
   - name: high_error_rate
     severity: P1
     condition: error_rate_pct > 5 for 5m
+    metric: app_error_rate
+    threshold: 0.05
+    window: 5m
     type: symptom-based
     owner: team-oncall
     runbook: docs/alerts.md#2-high-error-rate
+    description: More than 5% of /chat requests are failing with HTTP 500
+    impact: Users receive error responses; service is degraded
+    dashboard_panel: "3. Error Rate"
+
   - name: cost_budget_spike
     severity: P2
     condition: hourly_cost_usd > 2x_baseline for 15m
+    metric: app_cost_per_hour_usd
+    baseline_metric: app_baseline_cost_per_hour_usd
+    threshold_factor: 2.0
+    window: 15m
     type: symptom-based
     owner: finops-owner
     runbook: docs/alerts.md#3-cost-budget-spike
+    description: Hourly LLM cost exceeds 2x the established baseline
+    impact: Budget burn rate exceeded; potential runaway cost
+    dashboard_panel: "5. Cost per Hour"

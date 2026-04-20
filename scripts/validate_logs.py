@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
+
+# Allow running as `python -m scripts.validate_logs`
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 LOG_PATH = Path("data/logs.jsonl")
 REQUIRED_FIELDS = {"ts", "level", "service", "event", "correlation_id"}
