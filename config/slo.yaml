@@ -4,13 +4,24 @@ slis:
   latency_p95_ms:
     objective: 3000
     target: 99.5
-    note: Replace with your group's target
+    metric: app_latency_p95_seconds
+    description: P95 end-to-end latency for /chat endpoint
+    measurement: histogram_quantile(0.95, app_request_latency_seconds_bucket)
   error_rate_pct:
     objective: 2
     target: 99.0
+    metric: app_error_rate
+    description: Percentage of /chat requests that return HTTP 500
+    measurement: sum(rate(app_errors_total[5m])) / sum(rate(app_requests_total[5m]))
   daily_cost_usd:
     objective: 2.5
     target: 100.0
+    metric: app_cost_per_hour_usd
+    description: Hourly cost of LLM API calls (extrapolated to daily)
+    measurement: app_cost_per_hour_usd
   quality_score_avg:
     objective: 0.75
     target: 95.0
+    metric: app_quality_score_avg
+    description: Average heuristic quality score across all responses
+    measurement: avg(app_quality_scores)
