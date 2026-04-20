@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from structlog.contextvars import bind_contextvars
 
 from .agent import LabAgent
+from .audit import audit_chat_error, audit_chat_request, audit_incident_toggle
 from .incidents import disable, enable, status
 from .logging_config import configure_logging, get_logger
 from .metrics import record_error, snapshot
@@ -24,40 +28,48 @@ agent = LabAgent()
 
 @app.on_event("startup")
 async def startup() -> None:
+    bind_contextvars(service=os.getenv("APP_NAME", "day13-observability-lab"), env=os.getenv("APP_ENV", "dev"))
     log.info(
         "app_started",
-        service=os.getenv("APP_NAME", "day13-observability-lab"),
-        env=os.getenv("APP_ENV", "dev"),
         payload={"tracing_enabled": tracing_enabled()},
     )
 
 
 @app.get("/health")
 async def health() -> dict:
+    bind_contextvars(service="health")
+    log.info("health_check", service="health")
     return {"ok": True, "tracing_enabled": tracing_enabled(), "incidents": status()}
 
 
 @app.get("/metrics")
 async def metrics() -> dict:
+    bind_contextvars(service="metrics")
+    log.info("metrics_served", service="metrics")
     return snapshot()
 
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: Request, body: ChatRequest) -> ChatResponse:
-    # TODO: Enrich logs with request context (user_id_hash, session_id, feature, model, env)
-    # bind_contextvars(...)
-    
-    log.info(
-        "request_received",
-        service="api",
-        payload={"message_preview": summarize_text(body.message)},
-    )
     try:
+        # Bind user context to all subsequent log entries in this request
+        bind_contextvars(
+            user_id_hash=hash_user_id(body.user_id),
+            session_id=body.session_id,
+            feature=body.feature,
+            model=agent.model,
+        )
+        log.info(
+            "request_received",
+            service="api",
+            payload={"message_preview": summarize_text(body.message)},
+        )
         result = agent.run(
             user_id=body.user_id,
             feature=body.feature,
             session_id=body.session_id,
             message=body.message,
+            correlation_id=request.state.correlation_id,
         )
         log.info(
             "response_sent",
@@ -67,6 +79,13 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
             tokens_out=result.tokens_out,
             cost_usd=result.cost_usd,
             payload={"answer_preview": summarize_text(result.answer)},
+        )
+        audit_chat_request(
+            user_id=body.user_id,
+            session_id=body.session_id,
+            feature=body.feature,
+            correlation_id=request.state.correlation_id,
+            latency_ms=result.latency_ms,
         )
         return ChatResponse(
             answer=result.answer,
@@ -80,6 +99,14 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
     except Exception as exc:  # pragma: no cover
         error_type = type(exc).__name__
         record_error(error_type)
+        bind_contextvars(error_type=error_type)
+        audit_chat_error(
+            user_id=body.user_id,
+            session_id=body.session_id,
+            feature=body.feature,
+            correlation_id=request.state.correlation_id,
+            error_type=error_type,
+        )
         log.error(
             "request_failed",
             service="api",
@@ -92,8 +119,10 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
 @app.post("/incidents/{name}/enable")
 async def enable_incident(name: str) -> JSONResponse:
     try:
+        bind_contextvars(service="control")
         enable(name)
-        log.warning("incident_enabled", service="control", payload={"name": name})
+        audit_incident_toggle(name=name, action="enable")
+        log.warning("incident_enabled", payload={"name": name})
         return JSONResponse({"ok": True, "incidents": status()})
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -102,8 +131,10 @@ async def enable_incident(name: str) -> JSONResponse:
 @app.post("/incidents/{name}/disable")
 async def disable_incident(name: str) -> JSONResponse:
     try:
+        bind_contextvars(service="control")
         disable(name)
-        log.warning("incident_disabled", service="control", payload={"name": name})
+        audit_incident_toggle(name=name, action="disable")
+        log.warning("incident_disabled", payload={"name": name})
         return JSONResponse({"ok": True, "incidents": status()})
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
